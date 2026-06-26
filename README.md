@@ -1,4 +1,4 @@
-# Smart Pantry (Akıllı Kiler)
+# Smart Pantry
 
 Collaborative pantry management backend built with **Java 21** and **Spring Boot**.  
 Track household inventory, reduce food waste, manage shopping lists, and analyze consumption habits.
