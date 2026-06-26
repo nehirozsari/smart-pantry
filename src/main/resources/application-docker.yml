@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/smart_pantry
+    username: smart_pantry
+    password: smart_pantry
+
+management:
+  endpoint:
+    health:
+      show-details: always
