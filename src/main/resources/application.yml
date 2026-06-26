@@ -50,3 +50,9 @@ logging:
   level:
     root: INFO
     com.nehirozsari.smartpantry: DEBUG
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:smart-pantry-dev-secret-key-change-in-production-32chars}
+    access-token-expiration: 15m
+    refresh-token-expiration: 7d

@@ -14,7 +14,7 @@ Track household inventory, reduce food waste, manage shopping lists, and analyze
 | Phase | Feature | Status |
 |-------|---------|--------|
 | 0 | Project bootstrap | ✅ Complete |
-| 1 | Authentication (JWT) | Planned |
+| 1 | Authentication (JWT) | ✅ Complete |
 | 2 | Household management | Planned |
 | 3 | Pantry inventory | Planned |
 | 4 | Expiration & notifications | Planned |
@@ -29,11 +29,11 @@ Track household inventory, reduce food waste, manage shopping lists, and analyze
 
 ## Tech Stack
 
-- **Java 21** · **Spring Boot 3.4**
+- **Java 21** · **Spring Boot 3.4** · **Spring Security**
 - **Spring Data JPA** · **Hibernate** · **PostgreSQL 16**
-- **Flyway** · **MapStruct** · **Lombok** · **Bean Validation**
+- **JWT (JJWT)** · **Flyway** · **MapStruct** · **Lombok** · **Bean Validation**
 - **SpringDoc OpenAPI** (Swagger UI)
-- **Docker** · **Docker Compose**
+- **Docker** · **Docker Compose** · **Testcontainers**
 - **JUnit 5** · **Mockito**
 
 ---
@@ -54,21 +54,34 @@ Controller  →  Service  →  Repository  →  PostgreSQL
 
 ```
 com.nehirozsari.smartpantry
-├── config          # JPA auditing, OpenAPI
+├── config          # Security, JPA, OpenAPI, JWT properties
+├── controller      # REST endpoints
 ├── domain
-│   └── entity      # JPA entities (BaseEntity)
+│   ├── entity      # JPA entities
+│   └── repository  # Spring Data repositories
 ├── dto             # Request/response DTOs
 ├── exception       # Global exception handling
-└── ...
+├── mapper          # MapStruct mappers
+├── security        # JWT filter, UserPrincipal, token hashing
+├── service         # Business logic
+└── validation      # Custom validators
 ```
 
-**Design decisions (Phase 0):**
+---
 
-- `ddl-auto: validate` — schema is owned by Flyway, not Hibernate
-- `open-in-view: false` — avoids lazy-loading issues in controllers
-- UUID primary keys via `GenerationType.UUID`
-- Standardized `ErrorResponse` across all API errors
-- JWT security scheme pre-configured in OpenAPI for upcoming auth phase
+## Authentication API (Phase 1)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/v1/auth/register` | No | Create account |
+| POST | `/api/v1/auth/login` | No | Login |
+| POST | `/api/v1/auth/refresh` | No | Rotate refresh token |
+| POST | `/api/v1/auth/logout` | Yes | Revoke refresh token |
+| PUT | `/api/v1/auth/password` | Yes | Change password |
+| GET | `/api/v1/users/me` | Yes | Get profile |
+| PUT | `/api/v1/users/me` | Yes | Update profile |
+
+Refresh tokens are returned in the **JSON response body** (v1). Access tokens expire in 15 minutes; refresh tokens in 7 days. Refresh token rotation is enforced on every refresh.
 
 ---
 
@@ -76,7 +89,7 @@ com.nehirozsari.smartpantry
 
 - **Java 21+** (JDK; set `JAVA_HOME` if `mvnw` cannot find Java)
 - **Maven** — included via `mvnw.cmd` (no global install required)
-- **Docker & Docker Compose** (for PostgreSQL and full-stack run)
+- **Docker & Docker Compose** (for PostgreSQL, full-stack run, and integration tests)
 
 ### Windows note
 
@@ -126,9 +139,11 @@ Run the application:
 |----------|---------|-------------|
 | `server.port` | `8080` | HTTP port |
 | `spring.datasource.url` | `jdbc:postgresql://localhost:5432/smart_pantry` | Database URL |
-| `spring.flyway.enabled` | `true` | Run migrations on startup |
+| `app.jwt.secret` | dev secret (override in prod) | HS256 signing key |
+| `app.jwt.access-token-expiration` | `15m` | Access token TTL |
+| `app.jwt.refresh-token-expiration` | `7d` | Refresh token TTL |
 
-Docker profile (`application-docker.yml`) overrides the datasource host to `postgres`.
+Set `JWT_SECRET` in production (minimum 32 characters).
 
 ---
 
@@ -156,11 +171,10 @@ All errors follow a consistent structure:
 
 ## Database Migrations
 
-Migrations live in `src/main/resources/db/migration/` and are applied automatically by Flyway on startup.
-
 | Version | Description |
 |---------|-------------|
 | V1 | Baseline — PostgreSQL `pgcrypto` extension |
+| V2 | `users` and `refresh_tokens` tables |
 
 ---
 
@@ -170,15 +184,16 @@ Migrations live in `src/main/resources/db/migration/` and are applied automatica
 .\mvnw.cmd test
 ```
 
-Tests use an in-memory H2 database with Flyway disabled (no PostgreSQL required for unit tests).
+- **Unit tests** use in-memory H2 (no Docker required)
+- **Integration tests** use Testcontainers (skipped automatically if Docker is unavailable)
 
 ---
 
 ## Project Status
 
-**Phase 0 complete.** The application boots, connects to PostgreSQL, runs Flyway migrations, exposes health checks and Swagger UI, and returns standardized error responses.
+**Phase 1 complete.** JWT authentication, refresh token rotation, profile management, and RBAC-ready security foundation are implemented.
 
-**Next:** Phase 1 — Authentication (register, login, JWT, refresh tokens, profile management).
+**Next:** Phase 2 — Household management (create, invite, roles, permissions).
 
 ---
 

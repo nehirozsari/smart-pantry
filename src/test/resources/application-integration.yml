@@ -1,0 +1,5 @@
+app:
+  jwt:
+    secret: integration-test-jwt-secret-key-min-32-chars
+    access-token-expiration: 15m
+    refresh-token-expiration: 7d

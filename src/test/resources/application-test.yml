@@ -12,6 +12,12 @@ spring:
   flyway:
     enabled: false
 
+app:
+  jwt:
+    secret: unit-test-jwt-secret-key-at-least-32-chars
+    access-token-expiration: 15m
+    refresh-token-expiration: 7d
+
 logging:
   level:
     root: WARN
